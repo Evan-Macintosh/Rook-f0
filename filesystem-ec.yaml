@@ -3,18 +3,19 @@
 # are required in this example since the default failureDomain is host.
 #  kubectl create -f filesystem-ec.yaml
 #################################################################################################################
+# look for <----- to see what I've changed
 
 apiVersion: ceph.rook.io/v1
 kind: CephFilesystem
 metadata:
-  name: myfs-ec
+  name: f0 
   namespace: rook-ceph # namespace:cluster
 spec:
   # The metadata pool spec
   metadataPool:
     replicated:
       # You need at least three OSDs on different nodes for this config to work
-      size: 3
+      size: 2 # 3 <-----
   # The list of data pool specs
   dataPools:
     # For erasure coded pools, we have to create a replicated pool as the default
@@ -24,7 +25,7 @@ spec:
     # You need at least three `bluestore` OSDs on different nodes for this config to work
     - name: erasurecoded
       erasureCoded:
-        dataChunks: 2
+        dataChunks: 3 # 2 <-----
         codingChunks: 1
       # Inline compression mode for the data pool
       parameters:
@@ -34,7 +35,7 @@ spec:
   # The metadata service (mds) configuration
   metadataServer:
     # The number of active MDS instances
-    activeCount: 1
+    activeCount: 2 # 1 <-----
     # Whether each active MDS instance will have an active standby with a warm metadata cache for faster failover.
     # If false, standbys will be available, but will not have a warm cache.
     activeStandby: true
@@ -85,23 +86,23 @@ spec:
     resources:
     # The requests and limits set here, allow the filesystem MDS Pod(s) to use half of one CPU core and 1 gigabyte of memory
     #  limits:
-    #    memory: "1024Mi"
+    #    memory: "4096Mi" # "1024Mi" <-----
     #  requests:
-    #    cpu: "500m"
-    #    memory: "1024Mi"
+    #    cpu: "1000m" # "500m" <-----
+    #    memory: "4096Mi" # "1024Mi" <-----
     # priorityClassName: my-priority-class
 ---
 # create default csi subvolume group
 apiVersion: ceph.rook.io/v1
 kind: CephFilesystemSubVolumeGroup
 metadata:
-  name: myfs-csi # lets keep the svg crd name same as `filesystem name + csi` for the default csi svg
+  name: f0-csi # lets keep the svg crd name same as `filesystem name + csi` for the default csi svg <-----
   namespace: rook-ceph # namespace:cluster
 spec:
   # The name of the subvolume group. If not set, the default is the name of the subvolumeGroup CR.
   name: csi
   # filesystemName is the metadata name of the CephFilesystem CR where the subvolume group will be created
-  filesystemName: myfs
+  filesystemName: f0 # <-----
   # reference https://docs.ceph.com/en/latest/cephfs/fs-volumes/#pinning-subvolumes-and-subvolume-groups
   # only one out of (export, distributed, random) can be set at a time
   # by default pinning is set with value: distributed=1
